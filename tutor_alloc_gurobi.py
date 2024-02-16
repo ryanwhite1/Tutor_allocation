@@ -120,7 +120,7 @@ file_name = input('Enter the file name of the tutor workshop availability Excel 
 
 # --------- READING IN THE EXCEL SPREADSHEETS ---------
 # Read in the availabilities spreadsheet as a dataframe, specify 1st sheet
-workshop_avail_df = import_spreadsheet(file_name, sname='Availability', blank_value='NotAvailable')
+workshop_avail_df = import_spreadsheet(file_name, sname='Availability', blank_value=0)
 
 # Dataframe for how many workshops assigned to each tutor & tutors' experience
 workshop_num_df = import_spreadsheet(file_name, sname='Allocations', blank_value=0)
@@ -215,7 +215,7 @@ NotAvailable = 0
 
 # The Availability dataframe entries are all strings. This alters the existing dataframe by
 # replacing the strings with the variables Available, IfNeeded, and NotAvailable.
-workshop_avail_df.replace(to_replace=['Available', 'IfNeeded', 'NotAvailable'],
+workshop_avail_df.replace(to_replace=['Available', 'If Needed', 'Not Available'],
                           value=[Available, IfNeeded, NotAvailable], inplace=True)
 
 # Dictionary of tutors' availabilities. Each entry in the dictionary is a pandas.Series.
@@ -330,18 +330,18 @@ else:
 # If the workshops start within an hour of each other, they will overlap, provided they are on the same day
 OnePlaceAtATime = {(i, w): m.addConstr(
     quicksum(X_iw[i, v] for v in Workshops if (i, v) in X_iw
-             if abs(Workshop_time[v][0] - Workshop_time[w][0]) <= 100
-             if Workshop_day[v] == Workshop_day[w]) <= 1
+              if abs(Workshop_time[v][0] - Workshop_time[w][0]) <= 100
+              if Workshop_day[v] == Workshop_day[w]) <= 1
 ) for i in Tutors for w in Workshops}
 
 # At least one experienced tutor per workshop (assuming that there are at least two tutors per workshop)
 # A tutor is experienced if their experience in the Excel sheet 'Allocations' = 1
 # If there are workshops with only one tutor, this constraint can be edited to: "workshop_exp_df.loc[i] == 0) <= 1"
 # to allow for inexperienced tutors tutoring by themselves (unlikely)
-AtMostOneInexp = {w: m.addConstr(
-    quicksum(X_iw[i, w] for i in Tutors if (i, w) in X_iw if workshop_exp_df.loc[i]['Experience'] == 1) >= 1)
-    for w in Workshops
-}
+# AtMostOneInexp = {w: m.addConstr(
+#     quicksum(X_iw[i, w] for i in Tutors if (i, w) in X_iw if workshop_exp_df.loc[i]['Experience'] == 1) >= 1)
+#     for w in Workshops
+# }
 
 # If there are any conflicts
 if conflicts.lower() == 'yes':
@@ -351,15 +351,15 @@ if conflicts.lower() == 'yes':
 
 # A supertutor is ideally teaching a workshop on the first day of workshops during the week.
 # This constraint can be removed if it makes the timetable infeasible.
-SupertutorWorkshop = {i: m.addConstr(
-    quicksum(X_iw[i, w] for w in Workshops if (i, w) in X_iw if first_workshop in Time_slots[w]) >= 1
-) for i in Supertutors}
+# SupertutorWorkshop = {i: m.addConstr(
+#     quicksum(X_iw[i, w] for w in Workshops if (i, w) in X_iw if first_workshop in Time_slots[w]) >= 1
+# ) for i in Supertutors}
 
 # Supertutors shouldn't teach the same workshop - inefficient use of resources
 # This constraint can be removed if it makes the timetable infeasible.
-SupertutorOverlap = {w: m.addConstr(
-    quicksum(X_iw[i, w] for i in Supertutors if (i, w) in X_iw) <= 1
-) for w in Workshops}
+# SupertutorOverlap = {w: m.addConstr(
+#     quicksum(X_iw[i, w] for i in Supertutors if (i, w) in X_iw) <= 1
+# ) for w in Workshops}
 
 # Constraints for Y_ijw and Z_ijkw
 # We want Y_ijw = 1 if and only if X_iw = X_jw = 1 (see comment at definition of Y_ijw)
